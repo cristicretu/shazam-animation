@@ -4,6 +4,7 @@ import { AudioLines } from 'lucide-react'
 import { AudioLines as AnimatedAudioLines } from '@/components/animate-ui/icons/audio-lines'
 import { TextScramble } from '@/components/ui/text-scramble'
 import { motion, AnimatePresence } from 'motion/react'
+import { parseBlob } from 'music-metadata'
 
 export const Route = createFileRoute('/')({
   component: App,
@@ -20,19 +21,43 @@ const songs = [
   },
   {
     id: 2,
-    title: "Watermelon Sugar",
-    artist: "Harry Styles",
-    duration: "2:54",
-    audioSrc: null
+    title: "ｉｎｇｌｅｓｉｄｅ",
+    artist: "90sFlav",
+    duration: "1:24",
+    audioSrc: "/songs/ｉｎｇｌｅｓｉｄｅ - 90sFlav - SoundLoadMate.com.mp3"
   },
   {
     id: 3,
-    title: "Levitating",
-    artist: "Dua Lipa",
-    duration: "3:23",
-    audioSrc: null
+    title: "Kona",
+    artist: "Alan Fitzpatrick & CamelPhat",
+    duration: "6:22",
+    audioSrc: "/songs/Premiere_ Alan Fitzpatrick _ CamelPhat _Kona_ - Mixmag - SoundLoadMate.com.mp3"
   }
 ]
+
+// Function to extract album artwork from audio file
+async function extractAlbumArt(audioSrc: string): Promise<string | null> {
+  try {
+    const response = await fetch(audioSrc)
+    const blob = await response.blob()
+    const metadata = await parseBlob(blob)
+    
+    if (metadata.common.picture && metadata.common.picture.length > 0) {
+      const picture = metadata.common.picture[0]
+      const base64String = btoa(
+        new Uint8Array(picture.data).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ''
+        )
+      )
+      return `data:${picture.format};base64,${base64String}`
+    }
+    return null
+  } catch (error) {
+    console.error('Error extracting album art:', error)
+    return null
+  }
+}
 
 function SongButton({ 
   songNumber, 
@@ -53,7 +78,15 @@ function SongButton({
   const [showDuration, setShowDuration] = useState(false)
   const [titleText, setTitleText] = useState(`SONG ${songNumber}`)
   const [shouldScrambleTitle, setShouldScrambleTitle] = useState(false)
+  const [albumArt, setAlbumArt] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
+
+  // Effect to extract album art when component mounts
+  useEffect(() => {
+    if (song.audioSrc && !albumArt) {
+      extractAlbumArt(song.audioSrc).then(setAlbumArt)
+    }
+  }, [song.audioSrc, albumArt])
 
   // Effect to handle audio playback
   useEffect(() => {
@@ -114,11 +147,16 @@ function SongButton({
       <div className="w-full">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            {/* Icon - changes based on state */}
-            {!isThisListening && (
+            {/* Album Art or Icon */}
+            {showArtist && albumArt ? (
+              <img 
+                src={albumArt} 
+                alt="Album artwork"
+                className="w-12 h-12 rounded-lg object-cover"
+              />
+            ) : !isThisListening ? (
               <AudioLines className={`w-8 h-8 ${showArtist ? 'text-green-400' : 'text-neutral-400'}`} />
-            )}
-            {isThisListening && (
+            ) : (
               <AnimatedAudioLines 
                 className="w-8 h-8 text-blue-400" 
                 size={32}
@@ -191,7 +229,7 @@ function App() {
     setListeningButtonId(null)
   }
 
-  return (
+  return (  
     <div className="min-h-screen bg-neutral-900 flex items-center justify-center px-4">
       <div className="w-full max-w-md space-y-4">
         {songs.map((song, index) => (
