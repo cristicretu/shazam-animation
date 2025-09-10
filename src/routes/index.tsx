@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { AudioLines } from 'lucide-react'
 import { AudioLines as AnimatedAudioLines } from '@/components/animate-ui/icons/audio-lines'
+import { TextScramble } from '@/components/ui/text-scramble'
 import { motion, AnimatePresence } from 'motion/react'
 
 export const Route = createFileRoute('/')({
@@ -30,83 +31,101 @@ const songs = [
   }
 ]
 
-type SongState = 'idle' | 'listening' | 'revealed'
-
 function SongButton({ songNumber, song }: { songNumber: number, song: typeof songs[0] }) {
-  const [state, setState] = useState<SongState>('idle')
+  const [isListening, setIsListening] = useState(false)
+  const [showArtist, setShowArtist] = useState(false)
+  const [showDuration, setShowDuration] = useState(false)
+  const [titleText, setTitleText] = useState(`SONG ${songNumber}`)
+  const [shouldScrambleTitle, setShouldScrambleTitle] = useState(false)
 
   const handleClick = () => {
-    if (state !== 'idle') return
+    if (isListening) return
     
-    setState('listening')
+    // Start listening phase
+    setIsListening(true)
     
     const randomDelay = Math.random() < 0.5 ? 1000 : 3000
     const totalDelay = 3000 + randomDelay
     
     setTimeout(() => {
-      setState('revealed')
+      // Stop listening and start revealing
+      setIsListening(false)
+      setShouldScrambleTitle(true)
+      setTitleText(song.title)
+      
+      // Then show artist after a short delay
+      setTimeout(() => {
+        setShowArtist(true)
+        
+        // Finally show duration
+        setTimeout(() => {
+          setShowDuration(true)
+        }, 300)
+      }, 500)
     }, totalDelay)
   }
 
   return (
     <motion.div 
-      className="p-6 bg-neutral-800/50 rounded-lg cursor-pointer hover:bg-neutral-800/70 transition-colors duration-200 min-h-[92px] flex items-center"
+      className="p-6 bg-neutral-800/50 rounded-lg cursor-pointer hover:bg-neutral-800/70 transition-colors duration-200 min-h-[96px] flex items-center"
       onClick={handleClick}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
       <div className="w-full">
-        <AnimatePresence mode="wait">
-          {state === 'idle' && (
-            <motion.div
-              key="idle"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex items-center space-x-4"
-            >
-              <AudioLines className="w-8 h-8 text-neutral-400" />
-              <span className="text-white text-lg font-medium">SONG {songNumber}</span>
-            </motion.div>
-          )}
-          
-          {state === 'listening' && (
-            <motion.div
-              key="listening"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex items-center space-x-4"
-            >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            {/* Icon - changes based on state */}
+            {!isListening && (
+              <AudioLines className={`w-8 h-8 ${showArtist ? 'text-green-400' : 'text-neutral-400'}`} />
+            )}
+            {isListening && (
               <AnimatedAudioLines 
                 className="w-8 h-8 text-blue-400" 
                 size={32}
                 animate
               />
-              <span className="text-blue-400 text-lg font-medium">Listening...</span>
-            </motion.div>
-          )}
+            )}
+            
+            <div>
+              {/* Title - shows SONG X, then scrambles to actual title */}
+              <TextScramble
+                className="text-white text-lg font-medium"
+                trigger={shouldScrambleTitle}
+                duration={0.8}
+                as="h3"
+              >
+                {titleText}
+              </TextScramble>
+              
+              {/* Artist - appears after title is revealed */}
+              <AnimatePresence>
+                {showArtist && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-neutral-400 text-sm"
+                  >
+                    {song.artist}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
           
-          {state === 'revealed' && (
-            <motion.div
-              key="revealed"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-between"
-            >
-              <div className="flex items-center space-x-4">
-                <AudioLines className="w-8 h-8 text-green-400" />
-                <div>
-                  <h3 className="text-white font-medium">{song.title}</h3>
-                  <p className="text-neutral-400 text-sm">{song.artist}</p>
-                </div>
-              </div>
-              <div className="text-neutral-500 text-sm font-mono">
+          {/* Duration - appears last */}
+          <AnimatePresence>
+            {showDuration && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-neutral-500 text-sm font-mono"
+              >
                 {song.duration}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </motion.div>
   )
