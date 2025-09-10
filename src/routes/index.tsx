@@ -50,62 +50,64 @@ function SongButton({ songNumber, song }: { songNumber: number, song: typeof son
 
   return (
     <motion.div 
-      className="p-6 bg-neutral-800/50 rounded-lg cursor-pointer hover:bg-neutral-800/70 transition-colors duration-200"
+      className="p-6 bg-neutral-800/50 rounded-lg cursor-pointer hover:bg-neutral-800/70 transition-colors duration-200 min-h-[92px] flex items-center"
       onClick={handleClick}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
-      <AnimatePresence mode="wait">
-        {state === 'idle' && (
-          <motion.div
-            key="idle"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex items-center justify-center space-x-4"
-          >
-            <AudioLines className="w-8 h-8 text-neutral-400" />
-            <span className="text-white text-lg font-medium">SONG {songNumber}</span>
-          </motion.div>
-        )}
-        
-        {state === 'listening' && (
-          <motion.div
-            key="listening"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex items-center justify-center space-x-4"
-          >
-            <AnimatedAudioLines 
-              className="w-8 h-8 text-blue-400" 
-              size={32}
-              animate
-            />
-            <span className="text-blue-400 text-lg font-medium">Listening...</span>
-          </motion.div>
-        )}
-        
-        {state === 'revealed' && (
-          <motion.div
-            key="revealed"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-between"
-          >
-            <div className="flex items-center space-x-4">
-              <AudioLines className="w-8 h-8 text-green-400" />
-              <div>
-                <h3 className="text-white font-medium">{song.title}</h3>
-                <p className="text-neutral-400 text-sm">{song.artist}</p>
+      <div className="w-full">
+        <AnimatePresence mode="wait">
+          {state === 'idle' && (
+            <motion.div
+              key="idle"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center space-x-4"
+            >
+              <AudioLines className="w-8 h-8 text-neutral-400" />
+              <span className="text-white text-lg font-medium">SONG {songNumber}</span>
+            </motion.div>
+          )}
+          
+          {state === 'listening' && (
+            <motion.div
+              key="listening"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center space-x-4"
+            >
+              <AnimatedAudioLines 
+                className="w-8 h-8 text-blue-400" 
+                size={32}
+                animate
+              />
+              <span className="text-blue-400 text-lg font-medium">Listening...</span>
+            </motion.div>
+          )}
+          
+          {state === 'revealed' && (
+            <motion.div
+              key="revealed"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-between"
+            >
+              <div className="flex items-center space-x-4">
+                <AudioLines className="w-8 h-8 text-green-400" />
+                <div>
+                  <h3 className="text-white font-medium">{song.title}</h3>
+                  <p className="text-neutral-400 text-sm">{song.artist}</p>
+                </div>
               </div>
-            </div>
-            <div className="text-neutral-500 text-sm font-mono">
-              {song.duration}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <div className="text-neutral-500 text-sm font-mono">
+                {song.duration}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   )
 }
