@@ -31,25 +31,39 @@ const songs = [
   }
 ]
 
-function SongButton({ songNumber, song }: { songNumber: number, song: typeof songs[0] }) {
-  const [isListening, setIsListening] = useState(false)
+function SongButton({ 
+  songNumber, 
+  song, 
+  isThisListening, 
+  isAnyListening, 
+  onStartListening, 
+  onStopListening 
+}: { 
+  songNumber: number
+  song: typeof songs[0]
+  isThisListening: boolean
+  isAnyListening: boolean
+  onStartListening: () => void
+  onStopListening: () => void
+}) {
   const [showArtist, setShowArtist] = useState(false)
   const [showDuration, setShowDuration] = useState(false)
   const [titleText, setTitleText] = useState(`SONG ${songNumber}`)
   const [shouldScrambleTitle, setShouldScrambleTitle] = useState(false)
 
   const handleClick = () => {
-    if (isListening) return
+    // Disable click if any button is listening or this button is already revealed
+    if (isAnyListening || showArtist) return
     
     // Start listening phase
-    setIsListening(true)
+    onStartListening()
     
     const randomDelay = Math.random() < 0.5 ? 1000 : 3000
     const totalDelay = 3000 + randomDelay
     
     setTimeout(() => {
       // Stop listening and start revealing
-      setIsListening(false)
+      onStopListening()
       setShouldScrambleTitle(true)
       setTitleText(song.title)
       
@@ -65,21 +79,32 @@ function SongButton({ songNumber, song }: { songNumber: number, song: typeof son
     }, totalDelay)
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      handleClick()
+    }
+  }
+
   return (
     <motion.div 
-      className="p-6 bg-neutral-800/50 rounded-lg cursor-pointer hover:bg-neutral-800/70 transition-colors duration-200 min-h-[96px] flex items-center"
+      className={`p-6 bg-neutral-800/50 rounded-lg transition-colors duration-200 min-h-[96px] flex items-center ${
+        isAnyListening && !isThisListening 
+          ? 'opacity-50 cursor-not-allowed' 
+          : 'cursor-pointer hover:bg-neutral-800/70'
+      }`}
       onClick={handleClick}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={isAnyListening && !isThisListening ? {} : { scale: 1.02 }}
+      whileTap={isAnyListening && !isThisListening ? {} : { scale: 0.98 }}
+      onKeyDown={handleKeyDown}
     >
       <div className="w-full">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Icon - changes based on state */}
-            {!isListening && (
+            {!isThisListening && (
               <AudioLines className={`w-8 h-8 ${showArtist ? 'text-green-400' : 'text-neutral-400'}`} />
             )}
-            {isListening && (
+            {isThisListening && (
               <AnimatedAudioLines 
                 className="w-8 h-8 text-blue-400" 
                 size={32}
@@ -132,11 +157,29 @@ function SongButton({ songNumber, song }: { songNumber: number, song: typeof son
 }
 
 function App() {
+  const [listeningButtonId, setListeningButtonId] = useState<number | null>(null)
+
+  const handleStartListening = (buttonId: number) => {
+    setListeningButtonId(buttonId)
+  }
+
+  const handleStopListening = () => {
+    setListeningButtonId(null)
+  }
+
   return (
     <div className="min-h-screen bg-neutral-900 flex items-center justify-center px-4">
       <div className="w-full max-w-md space-y-4">
         {songs.map((song, index) => (
-          <SongButton key={song.id} songNumber={index + 1} song={song} />
+          <SongButton 
+            key={song.id} 
+            songNumber={index + 1} 
+            song={song}
+            isThisListening={listeningButtonId === song.id}
+            isAnyListening={listeningButtonId !== null}
+            onStartListening={() => handleStartListening(song.id)}
+            onStopListening={handleStopListening}
+          />
         ))}
       </div>
     </div>
