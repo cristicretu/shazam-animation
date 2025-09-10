@@ -141,15 +141,9 @@ function SongButton({
       setShouldScrambleTitle(true)
       setTitleText(song.title)
       
-      // Then show artist after a short delay
-      setTimeout(() => {
-        setShowArtist(true)
-        
-        // Finally show duration
-        setTimeout(() => {
-          setShowDuration(true)
-        }, 300)
-      }, 500)
+      // Show artist and duration immediately with the reveal
+      setShowArtist(true)
+      setShowDuration(true)
     }, totalDelay)
   }
 
@@ -214,8 +208,20 @@ function SongButton({
               <AnimatePresence>
                 {showArtist && (
                   <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ 
+                      opacity: 0, 
+                      y: 10,
+                      filter: "blur(10px)"
+                    }}
+                    animate={{ 
+                      opacity: 1, 
+                      y: 0,
+                      filter: "blur(0px)"
+                    }}
+                    transition={{
+                      duration: 0.3,
+                      ease: "easeOut"
+                    }}
                     className="text-neutral-400 text-sm"
                   >
                     {song.artist}
@@ -229,8 +235,20 @@ function SongButton({
           <AnimatePresence>
             {showDuration && (
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ 
+                  opacity: 0, 
+                  x: 20,
+                  filter: "blur(10px)"
+                }}
+                animate={{ 
+                  opacity: 1, 
+                  x: 0,
+                  filter: "blur(0px)"
+                }}
+                transition={{
+                  duration: 0.3,
+                  ease: "easeOut"
+                }}
                 className="text-neutral-500 text-sm font-mono"
               >
                 {song.duration}
