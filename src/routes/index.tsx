@@ -17,21 +17,24 @@ const songs = [
     title: "Suffocation (Slowed)",
     artist: "Crystal Castles - Lewis",
     duration: "5:04",
-    audioSrc: "/songs/Crystal Castles Suffocation _Slowed_ - Lewis - SoundLoadMate.com.mp3"
+    audioSrc: "/songs/Crystal Castles Suffocation _Slowed_ - Lewis - SoundLoadMate.com.mp3",
+    startTime: 2
   },
   {
     id: 2,
     title: "ｉｎｇｌｅｓｉｄｅ",
     artist: "90sFlav",
     duration: "1:24",
-    audioSrc: "/songs/ｉｎｇｌｅｓｉｄｅ - 90sFlav - SoundLoadMate.com.mp3"
+    audioSrc: "/songs/ｉｎｇｌｅｓｉｄｅ - 90sFlav - SoundLoadMate.com.mp3",
+    startTime: 24
   },
   {
     id: 3,
     title: "Kona",
     artist: "Alan Fitzpatrick & CamelPhat",
     duration: "6:22",
-    audioSrc: "/songs/Premiere_ Alan Fitzpatrick _ CamelPhat _Kona_ - Mixmag - SoundLoadMate.com.mp3"
+    audioSrc: "/songs/Premiere_ Alan Fitzpatrick _ CamelPhat _Kona_ - Mixmag - SoundLoadMate.com.mp3",
+    startTime: 224 // 3:44 in seconds
   }
 ]
 
@@ -80,6 +83,7 @@ function SongButton({
   const [shouldScrambleTitle, setShouldScrambleTitle] = useState(false)
   const [albumArt, setAlbumArt] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [showGifEffect, setShowGifEffect] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
 
   // Effect to extract album art when component mounts
@@ -92,6 +96,7 @@ function SongButton({
   // Effect to handle audio playback
   useEffect(() => {
     if (isThisListening && song.audioSrc && audioRef.current) {
+      audioRef.current.currentTime = song.startTime || 0
       audioRef.current.play().catch(console.error)
       setIsPlaying(true)
     }
@@ -118,6 +123,7 @@ function SongButton({
         setTimeout(() => {
           onStopListening() // End listening state immediately
           if (audioRef.current) {
+            audioRef.current.currentTime = song.startTime || 0
             audioRef.current.play().catch(console.error)
             setIsPlaying(true)
           }
@@ -144,6 +150,12 @@ function SongButton({
       // Show artist and duration immediately with the reveal
       setShowArtist(true)
       setShowDuration(true)
+      setShowGifEffect(true)
+      
+      // Hide the GIF effect after 2 seconds (one loop)
+      setTimeout(() => {
+        setShowGifEffect(false)
+      }, 1000)
     }, totalDelay)
   }
 
@@ -155,10 +167,10 @@ function SongButton({
 
   return (
     <motion.div 
-      className={`p-6 bg-neutral-800/50 rounded-lg transition-colors duration-200 min-h-[96px] flex items-center ${
+      className={`p-6 bg-black rounded-2xl duration-0  min-h-[96px] flex items-center ${
         isAnyListening && !isThisListening 
           ? 'opacity-50 cursor-not-allowed' 
-          : 'cursor-pointer hover:bg-neutral-800/70'
+          : 'cursor-pointer hover:bg-neutral-900'
       }`}
       onClick={handleClick}
       whileHover={isAnyListening && !isThisListening ? {} : { scale: 1.02 }}
@@ -171,14 +183,69 @@ function SongButton({
             {/* Album Art or Icon */}
             {showArtist && albumArt ? (
               <div className="relative">
-                <img 
+                {/* Background GIF effect - behind everything */}
+                <AnimatePresence>
+                  {showGifEffect && (
+                    <motion.div 
+                      className="absolute inset-0"
+                      initial={{ 
+                        scale: 0.8,
+                        opacity: 0,
+                        filter: "brightness(50%) blur(8px)"
+                      }}
+                      animate={{ 
+                        scale: 1.0,
+                        opacity: 0.6,
+                        filter: "brightness(150%) blur(0px)"
+                      }}
+                      exit={{ 
+                        opacity: 0,
+                        filter: "brightness(50%) blur(4px)"
+                      }}
+                      transition={{
+                        type: "spring",
+                        damping: 12,
+                        stiffness: 200,
+                        mass: 1.2,
+                        duration: 0.8
+                      }}
+                    >
+                      <img 
+                        src="/5d0da243890656b9dc099b7d8c08f9db.gif"
+                        alt="Effect"
+                        className="w-12 h-12 object-cover"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Album artwork - completely separate */}
+                <motion.img 
                   src={albumArt} 
                   alt="Album artwork"
-                  className="w-12 h-12 rounded-lg object-cover"
+                  className="w-12 h-12 rounded-lg object-cover relative z-10"
+                  initial={{ 
+                    scale: 0.8,
+                    opacity: 0,
+                    filter: "brightness(50%) blur(8px)"
+                  }}
+                  animate={{ 
+                    scale: 1.0,
+                    opacity: 1,
+                    filter: "brightness(100%) blur(0px)"
+                  }}
+                  transition={{
+                    type: "spring",
+                    damping: 12,
+                    stiffness: 200,
+                    mass: 1.2,
+                    duration: 1.2
+                  }}
                 />
+                
                 {/* Play/Pause indicator */}
                 {isPlaying && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg z-20">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   </div>
                 )}
@@ -284,7 +351,7 @@ function App() {
   }
 
   return (  
-    <div className="min-h-screen bg-neutral-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-neutral-950 flex items-center justify-center px-4">
       <div className="w-full max-w-md space-y-4">
         {songs.map((song, index) => (
           <SongButton 
