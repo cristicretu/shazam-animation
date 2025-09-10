@@ -79,6 +79,7 @@ function SongButton({
   const [titleText, setTitleText] = useState(`SONG ${songNumber}`)
   const [shouldScrambleTitle, setShouldScrambleTitle] = useState(false)
   const [albumArt, setAlbumArt] = useState<string | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
 
   // Effect to extract album art when component mounts
@@ -92,17 +93,43 @@ function SongButton({
   useEffect(() => {
     if (isThisListening && song.audioSrc && audioRef.current) {
       audioRef.current.play().catch(console.error)
-    } else if (!isThisListening && audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
+      setIsPlaying(true)
     }
+    // Don't pause when listening stops - let it continue playing
   }, [isThisListening, song.audioSrc])
 
+  // Effect to stop this audio when another song starts listening
+  useEffect(() => {
+    if (isAnyListening && !isThisListening && audioRef.current && isPlaying) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+    }
+  }, [isAnyListening, isThisListening, isPlaying])
+
   const handleClick = () => {
-    // Disable click if any button is listening or this button is already revealed
-    if (isAnyListening || showArtist) return
+    // If this song is revealed, toggle play/pause
+    if (showArtist && song.audioSrc && audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause()
+        setIsPlaying(false)
+      } else {
+        // Stop any other playing audio first
+        onStartListening() // This will trigger stopping other audio
+        setTimeout(() => {
+          onStopListening() // End listening state immediately
+          if (audioRef.current) {
+            audioRef.current.play().catch(console.error)
+            setIsPlaying(true)
+          }
+        }, 0)
+      }
+      return
+    }
     
-    // Start listening phase
+    // Disable click if any button is listening
+    if (isAnyListening) return
+    
+    // Start listening phase for unrevealed songs
     onStartListening()
     
     const randomDelay = Math.random() < 0.5 ? 1000 : 3000
@@ -149,11 +176,19 @@ function SongButton({
           <div className="flex items-center space-x-4">
             {/* Album Art or Icon */}
             {showArtist && albumArt ? (
-              <img 
-                src={albumArt} 
-                alt="Album artwork"
-                className="w-12 h-12 rounded-lg object-cover"
-              />
+              <div className="relative">
+                <img 
+                  src={albumArt} 
+                  alt="Album artwork"
+                  className="w-12 h-12 rounded-lg object-cover"
+                />
+                {/* Play/Pause indicator */}
+                {isPlaying && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  </div>
+                )}
+              </div>
             ) : !isThisListening ? (
               <AudioLines className={`w-8 h-8 ${showArtist ? 'text-green-400' : 'text-neutral-400'}`} />
             ) : (
@@ -212,6 +247,7 @@ function SongButton({
           src={song.audioSrc}
           preload="metadata"
           style={{ display: 'none' }}
+          onEnded={() => setIsPlaying(false)}
         />
       )}
     </motion.div>
