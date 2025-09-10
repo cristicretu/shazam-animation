@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { AudioLines } from 'lucide-react'
 import { AudioLines as AnimatedAudioLines } from '@/components/animate-ui/icons/audio-lines'
 import { TextScramble } from '@/components/ui/text-scramble'
@@ -13,21 +13,24 @@ export const Route = createFileRoute('/')({
 const songs = [
   {
     id: 1,
-    title: "Blinding Lights",
-    artist: "The Weeknd",
-    duration: "3:20",
+    title: "Suffocation (Slowed)",
+    artist: "Crystal Castles - Lewis",
+    duration: "5:04",
+    audioSrc: "/songs/Crystal Castles Suffocation _Slowed_ - Lewis - SoundLoadMate.com.mp3"
   },
   {
     id: 2,
     title: "Watermelon Sugar",
     artist: "Harry Styles",
     duration: "2:54",
+    audioSrc: null
   },
   {
     id: 3,
     title: "Levitating",
     artist: "Dua Lipa",
     duration: "3:23",
+    audioSrc: null
   }
 ]
 
@@ -50,6 +53,17 @@ function SongButton({
   const [showDuration, setShowDuration] = useState(false)
   const [titleText, setTitleText] = useState(`SONG ${songNumber}`)
   const [shouldScrambleTitle, setShouldScrambleTitle] = useState(false)
+  const audioRef = useRef<HTMLAudioElement>(null)
+
+  // Effect to handle audio playback
+  useEffect(() => {
+    if (isThisListening && song.audioSrc && audioRef.current) {
+      audioRef.current.play().catch(console.error)
+    } else if (!isThisListening && audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+  }, [isThisListening, song.audioSrc])
 
   const handleClick = () => {
     // Disable click if any button is listening or this button is already revealed
@@ -152,6 +166,16 @@ function SongButton({
           </AnimatePresence>
         </div>
       </div>
+      
+      {/* Hidden audio element for playback */}
+      {song.audioSrc && (
+        <audio
+          ref={audioRef}
+          src={song.audioSrc}
+          preload="metadata"
+          style={{ display: 'none' }}
+        />
+      )}
     </motion.div>
   )
 }
